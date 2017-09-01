@@ -1,0 +1,33 @@
+{% extends "accounts/layout.html" %}
+{% load humanize %}
+
+{% block content %}
+
+	<div class="container">
+
+	<div class="panel panel-default">
+		<div class="panel-heading" style="text-align:center;">
+			좋아요한 상품
+		</div>
+
+		<div class="panel-body">
+			{% for flower in flower_list %}
+			<div class="block" onclick="location.href='{{ flower.get_absolute_url }}'">
+				<div class="middle">
+					<img src="{{ flower.thumbnail.url }}">
+				</div>
+				<div class="bottom">
+					<div class="heading">{{ flower.name }}</div>
+					<div class="info">{{ flower.price|intcomma }} 원</div>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+		<div class="panel-footer">
+			From YAMI
+		</div>
+
+	</div>
+	</div>
+
+{% endblock %}

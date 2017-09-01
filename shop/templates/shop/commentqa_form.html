@@ -1,0 +1,52 @@
+{% extends "shop/layout.html" %}
+{% load humanize %}
+
+{% block content %}
+
+	<div class="container">
+		<div class="panel panel-default">
+			<div class="panel-heading" style="text-align:center;">
+				<h5>{{ flower.name }} <small>by .YAMI</small></h5>
+				<div style="height:1rem;"></div>
+
+				<div style="text-align:center;">
+					<div class="detail-thumbnail" style="height:10rem;">
+						<img src="{{ flower.thumbnail.url }}">
+					</div>
+					<div style="height:1rem;"></div>
+					<div class="detail-info">
+						<div class="price">
+							{{ flower.price|intcomma }} 원
+							</a>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="panel panel-default">
+			<div class="panel-heading" style="text-align:center;">
+				Q & A
+			</div>
+			<div class="panel-body">
+				<form action="" method="post" enctype="multipart/form-data">
+					{% csrf_token %}
+					<table class="table table-hover table-bordered">
+						{{ form.as_table }}
+					</table>
+					<div style="width:100%;text-align:center;">
+						<input class="btn btn-default" type="submit" value="등록" style="width:10rem;">
+						<a class="btn btn-default" href="javascript:history.back()" style="width:10rem;">취소</a>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		$(function(){
+			$('#id_subject').focus();
+		});
+	</script>
+
+{% endblock %}

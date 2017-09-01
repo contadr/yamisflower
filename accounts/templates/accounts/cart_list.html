@@ -1,0 +1,120 @@
+{% extends "accounts/layout.html" %}
+{% load humanize %}
+
+{% block content %}
+
+	<div class="container">
+
+	<div class="panel panel-default">
+		<div class="panel-heading" style="text-align:center;">
+			CART LIST
+		</div>
+
+		<div class="panel-body">
+
+			<table class="table table-hover table-bordered table-cart">
+				<thead>
+					<tr>
+						<th width="50"><input name="choice-all" id="choice-all" type="checkbox"></th>
+						<th width="60">이미지</th>
+						<th>꽃이름</th>
+						<th width="80">가격(원)</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for cart in cart_list %}
+					<tr>
+						<td width="50"><input name="choice-flower" id="choice-{{ cart.id }}" type="checkbox"></td>
+						<td width="60" style="text-align:center;"><img src="{{ cart.flower.thumbnail.url }}" style="height:4rem;width:auto;"></td>
+						<td onclick="location.href='{% url "shop:flower_detail" cart.flower.id %}'">{{ cart.flower.name }}</td>
+						<td width="80">{{ cart.flower.price|intcomma }}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+			<a style="float:left;" class="btn btn-default" onclick="flower_cart_delete();">선택상품삭제</a>
+			<a style="float:right;" class="btn btn-default" onclick="flower_order();">선택상품주문</a>
+		</div>
+		<div class="panel-footer">
+			From YAMI
+		</div>
+
+	</div>
+	</div>
+
+	<script type="text/javascript">
+	
+		$(document).ready(function(){
+			$('#choice-all').change(function(){
+				if($('#choice-all').is(":checked")){
+					$('input:checkbox[name="choice-flower"]').each(function(){
+						this.checked = true;
+					});
+				}else{
+					$('input:checkbox[name="choice-flower"]').each(function(){
+						this.checked = false;
+					});
+				}
+			});
+
+			{% for cart in cart_list %}
+				$('#choice-{{ cart.id }}').change(function(){
+					if ($('#choice-{{ cart.id }}').is(":checked") == false){
+						$('#choice-all').attr("checked", false);
+					}
+				});
+			{% endfor %}
+		});
+
+		function flower_order(){
+			var args = [];
+			{% for cart in cart_list %}
+			if($('#choice-{{ cart.id }}').is(":checked")){
+				args.push({{ cart.flower.id }}+'/');
+			}
+			{% endfor %}
+
+			url = '/shop/order/';
+
+			if(args.length != 0){
+				for(var i = 0; i < args.length; i++){
+					url += args[i];
+				}
+
+				location.href = url;
+			}
+		}
+
+		function flower_cart_delete(){
+			var args = [];
+			{% for cart in cart_list %}
+			if($('#choice-{{ cart.id }}').is(":checked")){
+				args.push({{ cart.id }}+'/');
+			}
+			{% endfor %}
+
+			url = '/shop/cart_delete/';
+
+			if(args.length != 0){
+				for(var i = 0; i < args.length; i++){
+					url += args[i];
+				}
+
+				$.ajax({
+					type: 'POST',
+					url: url,
+					beforeSend: function(xhr) {
+						xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+					},
+					success: function(res) {
+						if(res == 1){
+							location.reload();
+						}
+					}
+				});
+			}
+		}
+	
+	</script>
+
+{% endblock %}

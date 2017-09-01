@@ -1,0 +1,60 @@
+{% extends "accounts/layout.html" %}
+{% load socialaccount %}
+
+{% block content %}
+
+    <div class="container">
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                로그인
+            </div>
+            <div class="panel-body">
+                <form action="" method="post" style="text-align:center;">
+                    {% csrf_token %}
+                    <table class="table table-hover table-bordered">
+                        {{ form.as_table }}
+                    </table>
+                    <input type="submit" class="btn btn-default" value="로그인" style="width:12rem;" />
+                    <a href="{% url "signup" %}" class="btn btn-default" style="width:12rem;">회원가입</a>
+                    <div style="height:1rem;"></div>
+                        {% for provider in providers %}
+                            {% if provider.name == 'Facebook' %}
+                                <div style="margin-bottom:1rem;">
+                                    <a href="{% provider_login_url provider.id %}" class="btn btn-primary" style="width:24rem;background-color:#3b5998;">페이스북으로 로그인</a>
+                                </div>
+                            {% elif provider.name == 'Naver' %}
+                                <!-- <a href="{% provider_login_url provider.id %}">
+                                    <img src="http://static.nid.naver.com/oauth/big_g.PNG" border="0" title="네이버 아이디로 로그인" width="222px" height="48px">
+                                </a> -->
+                                <div style="margin-bottom:1rem;">
+                                    <a href="{% provider_login_url provider.id %}" class="btn btn-primary" style="width:24rem;background-color:#00c73c;">네이버 아이디로 로그인</a>
+                                </div>
+                            {% else %}
+                                <!-- <a href="{% provider_login_url provider.id %}">
+                                    <img src="/static/accounts/kakaologin.png" width="222px" height="48px">
+                                </a> -->
+                                <div style="margin-bottom:1rem;">
+                                    <a href="{% provider_login_url provider.id %}" class="btn btn-primary" style="width:24rem;background-color:#fcd411;color:#2e2e30;">카카오계정으로 로그인</a>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                </form>
+                    
+            </div>
+            <div class="panel-footer">
+                From YAMI
+            </div>
+        </div>
+
+    </div>
+
+    <script type="text/javascript">
+
+        $(function(){
+            $('#id_username').focus();
+
+        });
+    </script>
+
+{% endblock %}

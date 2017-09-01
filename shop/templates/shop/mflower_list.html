@@ -1,0 +1,149 @@
+{% extends "shop/layout_manager.html" %}
+{% load humanize %}
+
+{% block content %}
+
+	<div class="container">
+		<div class="jumbotron">
+			<a class="btn btn-default" href="javascript:history.back()"><span class="glyphicon glyphicon-chevron-left"></span>&nbsp;&nbsp;BACK</a>
+			<a class="btn btn-default" href="{% url "root" %}" style="margin-left:5px;"><span class="glyphicon glyphicon-home"></span>&nbsp;&nbsp;HOME</a>
+		</div>
+		<div class="jumbotron">
+			<div class="btn-group" role="group" aria-label="...">
+				<a class="btn btn-default" href="{% url "root" %}"><span class="glyphicon glyphicon-list-alt"></span>&nbsp;&nbsp;ORDER LIST</a>
+				<a class="btn btn-default" href="{% url "shop:mflower_new" %}"><span class="glyphicon glyphicon-plus"></span>&nbsp;&nbsp;NEW FLOWER</a>
+			</div>
+		</div>
+	</div>
+
+	<div class="container">
+	
+		<div class="row">
+			<div class="rol-sm-12">
+				<table class="table table-hover table-bordered table-cart">
+					<thead>
+						<tr>
+							<th style="text-align:center;">ID</th>
+							<th style="text-align:center;">썸네일</th>
+							<th style="text-align:center;">꽃 이름</th>
+							<th style="text-align:center;">가격 (원)</th>
+							<th style="text-align:center;">베스트</th>
+							<th style="text-align:center;">최근 수정일</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for flower in flower_list %}
+						<!--{# <tr onclick="location.href='{% url "shop:mflower_detail" flower.id %}'"> #}-->
+						<tr>
+							<td width="60" style="text-align:center;">{{ flower.id }}</td>
+							<td width="60" style="text-align:center;"><img src="{{ flower.thumbnail.url }}" style="height:4rem;width:auto;"></td>
+							<td data-toggle="modal" data-target="#myModal" onclick="open_modal({{ flower.id }}, '{{ flower.name }}');">{{ flower.name }}</td>
+							<td>{{ flower.price|intcomma }}</td>
+							<td width="60" style="text-align:center;">
+							{% if flower.is_best == True %}
+								<div id="is-best-div-{{ flower.id }}">
+									<a id="is-best-{{ flower.id }}" class="btn btn-primary btn-sm" onclick="mflower_is_best({{ flower.id }}, 0)">ON</a>
+								</div>
+							{% else %}
+								<div id="is-best-div-{{ flower.id }}">
+									<a id="is-best-{{ flower.id }}" class="btn btn-default btn-sm" onclick="mflower_is_best({{ flower.id }}, 1)">OFF</a>
+								</div>
+							{% endif %}
+							</td>
+							<td>{{ flower.updated_at|date:"Y-m-d" }}</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+
+			</div>
+		</div>
+		
+	</div>
+
+	<!-- Modal -->
+	<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="myModalLabel"></h4>
+				</div>
+				<div class="modal-body">
+					<input id="flowerid" type="hidden">
+					다음 중 어떤 작업을 하시겠습니까?
+				</div>
+				<div class="modal-footer">
+					<a onclick="open_page();" class="btn btn-default">쇼핑몰에서 보기</a>
+					<a onclick="mflower_update();" class="btn btn-default">수정</a>
+					<a class="btn btn-danger" onclick="delete_flower();">삭제</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+
+		function open_modal(flower_id, flower_name){
+			$('#flowerid').val(flower_id);
+			$('#myModalLabel').html(flower_name);
+		}
+
+		function delete_flower(){
+			if(confirm("정말로 삭제하시겠습니까?")){
+				$.ajax({
+					type: "DELETE",
+					url: "mflower_delete",
+					data: {
+						'flower_id': $('#flowerid').val()
+					},
+					beforeSend: function(xhr) {
+						xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+					},
+					success: function(res) {
+						if(res == 0){
+							alert("삭제 오류");
+						}else{
+							alert("성공적으로 삭제되었습니다.");
+							location.reload();
+						}
+					}
+				});
+			}else{
+				return;
+			}
+		}
+
+		function open_page(){
+			location.href='/shop/'+$('#flowerid').val();
+		}
+
+		function mflower_update(){
+			location.href='/shop/manager/'+$('#flowerid').val()+'/edit/';
+		}
+
+		function mflower_is_best(flower_id, is_best){
+			$.ajax({
+				type: 'POST',
+				url: 'mflower_is_best/',
+				data: {
+					'is_best': is_best,
+					'flower_id': flower_id
+				},
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+				},
+				success: function(res) {
+					if(res == 0){
+						alert("베스트 꽃은 최대 6개 까지 등록 가능합니다.");
+					}else if(res == 1){
+						$('#is-best-div-'+flower_id).html('<a id="is-best-'+flower_id+'" class="btn btn-primary btn-sm" onclick="mflower_is_best('+flower_id+', 0)">ON</a>')
+					}else{
+						$('#is-best-div-'+flower_id).html('<a id="is-best-'+flower_id+'" class="btn btn-default btn-sm" onclick="mflower_is_best('+flower_id+', 1)">OFF</a>')
+					}
+				}
+			});
+		}
+	</script>
+
+{% endblock %}

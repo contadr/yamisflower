@@ -1,0 +1,59 @@
+{% extends "accounts/layout.html" %}
+
+{% block content %}
+
+	<div class="container">
+		<div class="panel panel-default">
+			<div class="panel-heading">
+				{{ user.profile.name }} 님의 프로필
+			</div>
+			<div class="panel-body">
+				<table class="table table-hover table-bordered">
+					<tbody>
+						<tr>
+							<td>이메일</td>
+							{% if user.socialaccount_set.all.first.uid %}
+							<td>{{ user.socialaccount_set.all.first.provider  }} 로그인 계정</td>
+							{% else %}
+							<td>{{ user.username }}</td>
+							{% endif %}
+						</tr>
+						<tr>
+							<td>이름</td>
+							<td>{{ user.profile.name }}</td>
+						</tr>
+						<tr>
+							<td>휴대폰 번호</td>
+							<td>{{ user.profile.phone_number }}</td>
+						</tr>
+						<tr>
+							<td>우편번호</td>
+							<td>{{ user.profile.post_code }}</td>
+						</tr>
+						<tr>
+							<td>도로명 주소</td>
+							<td>{{ user.profile.address }}</td>
+						</tr>
+						<tr>
+							<td>상세 주소</td>
+							<td>{{ user.profile.address_detail }}</td>
+						</tr>
+						<tr>
+							<td>가입 날짜</td>
+							<td>{{ user.date_joined }}</td>
+						</tr>
+					</tbody>
+				</table>
+				<a class="btn btn-default" href="{% url "profile_edit" %}" style="float:right;">기본정보 변경</a>
+				{% if not user.socialaccount_set.all.first.uid %}
+				<a class="btn btn-default" href="{% url "password_edit" %}" style="float:right;">비밀번호 변경</a>
+				{% endif %}
+			</div>
+			<div class="panel-footer">
+				From YAMI
+			</div>
+		</div>
+
+	</div>
+
+{% endblock %}

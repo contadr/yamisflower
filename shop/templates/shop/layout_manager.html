@@ -1,0 +1,30 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0, minimum-scale=1.0,maximum-scale=1.0, user-scalable=no" />
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootswatch/3.3.7/paper/bootstrap.min.css" />
+    <script src="//code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44=" crossorigin="anonymous"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <link rel="stylesheet" type="text/css" href="{% static "shop/stylesheet.css" %}">
+	<title>YAMI's Manager</title>
+</head>
+<body style="padding:1rem;">
+
+	{% if messages %}
+    <div class="container">
+        {% for message in messages %}
+            {# message.tags : 메세지 level (info, success, danger 등) #}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message.message }} {# 실제 메세지 내용 #}
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+	{% block content %}
+	{% endblock %}
+</body>
+</html>

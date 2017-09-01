@@ -1,0 +1,587 @@
+{% extends "shop/layout.html" %}
+{% load humanize %}
+{% load el_pagination_tags %}
+
+{% if user.is_superuser %}
+{% block adminbuttons %}
+	<a style="margin-left:5px;float:right;" class="btn btn-danger" onclick="delete_flower({{ flower.id }});">삭제</a>
+	<a style="float:right;" class="btn btn-default" onclick="update_flower({{ flower.id }});">수정</a>
+
+	<script type="text/javascript">
+		function delete_flower(flower_id){
+			if(confirm("정말로 삭제하시겠습니까?")){
+				$.ajax({
+					type: "DELETE",
+					url: "/shop/manager/mflower_delete/",
+					data: {
+						'flower_id': flower_id
+					},
+					beforeSend: function(xhr) {
+						xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+					},
+					success: function(res) {
+						if(res == 0){
+							alert("삭제 오류");
+						}else{
+							alert("성공적으로 삭제되었습니다.");
+							location.href = '/shop/'
+						}
+					}
+				});
+			}else{
+				return;
+			}
+		}
+
+		function update_flower(flower_id){
+			location.href='/shop/manager/'+flower_id+'/edit/';
+		}
+	</script>
+{% endblock %}
+{% endif %}
+
+{% block content %}
+
+	<div class="container">
+
+	<div class="alert alert-warning display-none" id="success-alert">
+
+	</div>
+
+	<div class="panel panel-default">
+		<div class="panel-heading" style="text-align:center;">
+			<h5>{{ flower.name }} <small>by .YAMI</small></h5>
+			<div style="height:1rem;"></div>
+
+			<div class="detail-header">
+				<div class="detail-thumbnail">
+					<img src="{{ flower.thumbnail.url }}">
+				</div>
+				<div style="height:1rem;"></div>
+				<div class="detail-info">
+					<div class="price">
+						{{ flower.price|intcomma }} 원 
+						<a id="likebtn" class="btn btn-danger btn-outline btn-xs" title="좋아요" onclick="flower_like();">
+							{% autoescape off %}
+							{{ like }}
+							{% endautoescape %}
+						</a>
+					</div>
+					<div style="height:1rem;"></div>
+					<a class="btn btn-default" style="width:10rem;" onclick="flower_cart();">ADD CART</a>
+					<a href="/shop/order/{{ flower.id }}" class="btn btn-default" style="width:10rem;">BUY NOW</a>
+				</div>
+			</div>
+
+		</div>
+		<div class="panel-body" style="text-align:center;">
+			{{ flower.description|linebreaks }}
+			<hr>
+			<img src="{{ flower.thumbnail.url }}" style="max-width:100%;">
+			{% if flower.image01 %}
+			<hr>
+			<img src="{{ flower.image01.url }}" style="max-width:100%;">
+			{% endif %}
+			{% if flower.image02 %}
+			<hr>
+			<img src="{{ flower.image02.url }}" style="max-width:100%;">
+			{% endif %}
+			{% if flower.image03 %}
+			<hr>
+			<img src="{{ flower.image03.url }}" style="max-width:100%;">
+			{% endif %}
+			{% if flower.image04 %}
+			<hr>
+			<img src="{{ flower.image04.url }}" style="max-width:100%;">
+			{% endif %}
+			{% if flower.image05 %}
+			<hr>
+			<img src="{{ flower.image05.url }}" style="max-width:100%;">
+			{% endif %}
+		</div>
+		<!--<div class="panel-footer">
+			from YAMI
+		</div>-->
+	</div>
+
+	<!-- REVIEW -->
+	<div class="panel panel-default">
+		<div class="panel-heading" style="text-align:center;">
+			REVIEW<br>
+			<small>상품의 구매후기를 적어주세요.</small>
+		</div>
+		<div class="panel-body">
+			<table class="table table-hover table-striped table-review">
+				<thead>
+					<tr>
+						<th>SUBJECT</th>
+						<th class="center-thtd">ACTION</th>
+						<th class="center-thtd">AUTHOR</th>
+						<th class="center-thtd">DATE</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for review in review_list %}
+					{{ review.full_name|upper }}
+					<tr id="review-{{ review.id }}">
+						<td onclick="openreview({{ review.id }});">
+							{{ review.subject }} 
+							{% if review.image01 or review.image02 %}
+							<span class="glyphicon glyphicon-picture text-success"></span>  
+							{% endif %}
+							{% if review.rereview %}
+							<font class="text-primary"><strong>(1)</strong></font>
+							{% endif %}
+						</td>
+						<td width="100" class="center-thtd">
+							{% if review.author == request.user %}
+							<span style="float:right;">
+							<a class="btn btn-default btn-xs" href="/shop/{{ flower.id }}/review/{{ review.id }}/edit">수정</a>
+							<a class="btn btn-danger btn-xs" onclick="review_delete({{ review.id }});">삭제</a>
+							</span>
+							{% endif %}
+						</td>
+						<td width="100" class="center-thtd">{{ review.author.profile }}</td>
+						<td width="100" class="center-thtd">{{ review.created_at|date:"Y-m-d" }}</td>
+					</tr>
+					<tr id="reviewdetail-{{ review.id }}" class="display-none">
+						<td colspan="4">
+							<div>
+								{{ review.content|linebreaks }}
+							</div>
+							{% if review.image01 %}
+							<div style="margin-top:1rem;">
+								<img src="{{ review.image01.url }}" style="width:auto;height:25rem;">
+							</div>
+							{% endif %}
+							{% if review.image02 %}
+							<div style="margin-top:1rem;">
+								<img src="{{ review.image02.url }}" style="width:auto;height:25rem;">
+							</div>
+							{% endif %}
+							{% if review.rereview %}
+							<hr>
+							<strong>YAMISFLOWER</strong> 님의 답글<br><br>
+							{{ review.rereview.content|linebreaks }}
+							{%endif%}
+							
+							{% if user.is_superuser %}
+								{% if review.rereview %}
+									<div style="margin-top:1rem;">
+										<a class="btn btn-danger btn-sm" onclick="rereview_delete({{ review.rereview.id }})" style="float:right;margin-left:0.5rem;">삭제</a>
+										<a class="btn btn-default btn-sm" style="float:right;margin-left:0.5rem;" onclick="rereview_edit({{ review.id }});">답글수정</a>
+										<input class="form-control-sm" type="text" style="float:right;max-width:20rem;" id="rereview-content-edit-{{ review.id }}" value="{{ review.rereview.content }}">
+									</div>
+								{% else %}
+									<div style="margin-top:1rem;">
+										<a class="btn btn-primary btn-sm" style="float:right;" onclick="rereview({{ review.id }});">답글달기</a>
+										<input class="form-control-sm" type="text" style="float:right;max-width:20rem;" id="rereview-content-{{ review.id }}">
+									</div>
+								{% endif %}
+							{% endif %}
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+			<div style="text-align:center;">
+				<div class="pagination" style="margin:0px;">
+					<span class="step-links">
+						{% if review_list.has_previous %}
+						<a class="btn btn-primary btn-xs" href="?page1={{ review_list.previous_page_number }}"><span class="glyphicon glyphicon-chevron-left"></span></a> 
+						{% else %}
+						<button class="btn btn-primary btn-xs" disabled><span class="glyphicon glyphicon-chevron-left"></span></button> 
+						{% endif %}
+
+						<span class="current">
+							<strong class="text-primary">{{ review_list.number }}</strong> OF {{ review_list.paginator.num_pages }}
+						</span>
+
+						{% if review_list.has_next %}
+						 <a class="btn btn-primary btn-xs" href="?page1={{ review_list.next_page_number }}"><span class="glyphicon glyphicon-chevron-right"></span></a>
+						 {% else %}
+						<button class="btn btn-primary btn-xs" disabled><span class="glyphicon glyphicon-chevron-right"></span></button> 
+						{% endif %}
+					</span>
+				</div>
+			</div>
+			<div style="overflow:hidden;padding:0.5rem;">
+				<a class="btn btn-default btn-sm" href="{% url "shop:review_new" flower.id %}" style="float:right;">상품후기작성</a>
+			</div>
+		</div>
+	</div>
+
+	<!-- Q & A -->
+	<div class="panel panel-default">
+		<div class="panel-heading" style="text-align:center;">
+			Q & A<br>
+			<small>상품에 대한 궁금한 점을 알려드립니다.</small>
+		</div>
+		<div class="panel-body">
+			<table class="table table-hover table-striped table-review">
+				<thead>
+					<tr>
+						<th>SUBJECT</th>
+						<th class="center-thtd">ACTION</th>
+						<th class="center-thtd">AUTHOR</th>
+						<th class="center-thtd">DATE</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for commentqa in commentqa_list %}
+					{{ commentqa.full_name|upper }}
+					<tr id="commentqa-{{ commentqa.id }}">
+						{% if commentqa.author == request.user or user.is_superuser %}
+						<td onclick="opencommentqa({{ commentqa.id }});">
+						{% else %}
+						<td>
+						{% endif %}
+							<span class="glyphicon glyphicon-lock"></span> 
+							{{ commentqa.subject }} 
+							{% if commentqa.image01 or commentqa.image02 %}
+							<span class="glyphicon glyphicon-picture text-success"></span> 
+							{% endif %}
+							{% if commentqa.recommentqa %}
+							<font class="text-primary"><strong>(1)</strong></font>
+							{% endif %}
+						</td>
+						<td width="100" class="center-thtd">
+							{% if commentqa.author == request.user %}
+							<span style="float:right;">
+							<a class="btn btn-default btn-xs" href="/shop/{{ flower.id }}/commentqa/{{ commentqa.id }}/edit">수정</a>
+							<a class="btn btn-danger btn-xs" onclick="commentqa_delete({{ commentqa.id }});">삭제</a>
+							</span>
+							{% endif %}
+						</td>
+						<td width="100" class="center-thtd">{{ commentqa.author.profile }}</td>
+						<td width="100" class="center-thtd">{{ commentqa.created_at|date:"Y-m-d" }}</td>
+					</tr>
+					<tr id="commentqadetail-{{ commentqa.id }}" class="display-none">
+						<td colspan="4">
+							<div>
+								{{ commentqa.content|linebreaks }}
+							</div>
+							{% if commentqa.image01 %}
+							<div style="margin-top:1rem;">
+								<img src="{{ commentqa.image01.url }}" style="width:auto;height:25rem;">
+							</div>
+							{% endif %}
+							{% if commentqa.image02 %}
+							<div style="margin-top:1rem;">
+								<img src="{{ commentqa.image02.url }}" style="width:auto;height:25rem;">
+							</div>
+							{% endif %}
+							{% if commentqa.recommentqa %}
+							<hr>
+							<strong>YAMISFLOWER</strong> 님의 답글<br><br>
+							{{ commentqa.recommentqa.content|linebreaks }}
+							{%endif%}
+
+							{% if user.is_superuser %}
+								{% if commentqa.recommentqa %}
+									<div style="margin-top:1rem;">
+										<a class="btn btn-danger btn-sm" onclick="recommentqa_delete({{ commentqa.recommentqa.id }})" style="float:right;margin-left:0.5rem;">삭제</a>
+										<a class="btn btn-default btn-sm" style="float:right;margin-left:0.5rem;" onclick="recommentqa_edit({{ commentqa.id }});">답글수정</a>
+										<input class="form-control-sm" type="text" style="float:right;max-width:20rem;" id="recommentqa-content-edit-{{ commentqa.id }}" value="{{ commentqa.recommentqa.content }}">
+									</div>
+								{% else %}
+									<div style="margin-top:1rem;">
+										<a class="btn btn-primary btn-sm" style="float:right;" onclick="recommentqa({{ commentqa.id }});">답글달기</a>
+										<input class="form-control-sm" type="text" style="float:right;max-width:20rem;" id="recommentqa-content-{{ commentqa.id }}">
+									</div>
+								{% endif %}
+							{% endif %}
+						</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+			<div style="text-align:center;">
+				<div class="pagination" style="margin:0px;">
+					<span class="step-links">
+						{% if commentqa_list.has_previous %}
+						<a class="btn btn-primary btn-xs" href="?page2={{ commentqa_list.previous_page_number }}"><span class="glyphicon glyphicon-chevron-left"></span></a> 
+						{% else %}
+						<button class="btn btn-primary btn-xs" disabled><span class="glyphicon glyphicon-chevron-left"></span></button> 
+						{% endif %}
+
+						<span class="current">
+							<strong class="text-primary">{{ commentqa_list.number }}</strong> OF {{ commentqa_list.paginator.num_pages }}
+						</span>
+
+						{% if commentqa_list.has_next %}
+						 <a class="btn btn-primary btn-xs" href="?page2={{ commentqa_list.next_page_number }}"><span class="glyphicon glyphicon-chevron-right"></span></a>
+						 {% else %}
+						<button class="btn btn-primary btn-xs" disabled><span class="glyphicon glyphicon-chevron-right"></span></button> 
+						{% endif %}
+					</span>
+				</div>
+			</div>
+			<div style="overflow:hidden;padding:0.5rem;">
+				<a class="btn btn-default btn-sm" href="{% url "shop:commentqa_new" flower.id %}" style="float:right;">상품문의하기</a>
+			</div>
+		</div>
+	</div>
+
+	</div>
+
+	<!-- Modal -->
+	<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="myModalLabel">
+						주문 내역
+					</h4>
+				</div>
+				<div class="modal-body">
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal" aria-label="Close">닫기</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+
+		$(function(){
+			var param = document.location.href.split("?");
+			if(param.length > 1){
+				$("body").scrollTop($(document).height());
+			}
+
+		});
+
+		function flower_like(){
+			$('#success-alert').removeClass('display-none');
+			$.ajax({
+				type: 'POST',
+				url: 'like/',
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+				},
+				success: function(res) {
+					if(res == 0){
+						$('#likebtn').html('<span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>');
+
+						$('#success-alert').html('좋아요 취소');
+						$("#success-alert").fadeTo(2000, 500)
+						.slideUp(500, function(){
+					    	$("#success-alert").slideUp(500);
+						});
+					}else{
+						$('#likebtn').html('<span class="glyphicon glyphicon-heart" aria-hidden="true"></span>');
+						
+						$('#success-alert').html('좋아요 성공');
+						$("#success-alert").fadeTo(2000, 500)
+						.slideUp(500, function(){
+					    	$("#success-alert").slideUp(500);
+						});
+					}
+				}
+			});
+		}
+
+		function flower_cart(){
+			$('#success-alert').removeClass('display-none');
+			$.ajax({
+				type: 'POST',
+				url: 'cart_add/',
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+				},
+				success: function(res) {
+					if(res == 1){
+						$('#success-alert').html('상품이 \'CART\' 에 추가되었습니다.');
+						$("#success-alert").fadeTo(2000, 500)
+						.slideUp(500, function(){
+					    	$("#success-alert").slideUp(500);
+						});
+					}
+				}
+			});
+		}
+
+		function review_delete(review_id){
+			if(confirm("정말 후기를 삭제하시겠습니까?")){
+				$.ajax({
+					type: 'DELETE',
+					url: '/shop/review/delete/',
+					data: {
+						'review_id': review_id
+					},
+					beforeSend: function(xhr) {
+						xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+					},
+					success: function(res) {
+						if(res == 1){
+							location.reload();
+						}
+					}
+				});
+			}else{
+				return;
+			}
+		}
+
+		function commentqa_delete(commentqa_id){
+			if(confirm("정말 상품문의를 삭제하시겠습니까?")){
+				$.ajax({
+					type: 'DELETE',
+					url: '/shop/commentqa/delete/',
+					data: {
+						'commentqa_id': commentqa_id
+					},
+					beforeSend: function(xhr) {
+						xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+					},
+					success: function(res) {
+						if(res == 1){
+							location.reload();
+						}
+					}
+				});
+			}else{
+				return;
+			}
+		}
+
+		function openreview(review_id){
+			if($('#reviewdetail-'+review_id).hasClass("display-none")){
+				$('#review-'+review_id).addClass("review-select");
+				$('#reviewdetail-'+review_id).removeClass("display-none");
+			}else{
+				$('#review-'+review_id).removeClass("review-select");
+				$('#reviewdetail-'+review_id).addClass("display-none");
+			}
+		}
+
+		function opencommentqa(commentqa_id){
+			if($('#commentqadetail-'+commentqa_id).hasClass("display-none")){
+				$('#commentqa-'+commentqa_id).addClass("review-select");
+				$('#commentqadetail-'+commentqa_id).removeClass("display-none");
+			}else{
+				$('#commentqa-'+commentqa_id).removeClass("review-select");
+				$('#commentqadetail-'+commentqa_id).addClass("display-none");
+			}
+		}
+
+		function rereview(review_id){
+			$.ajax({
+				type: 'POST',
+				url: '/shop/rereview/new/',
+				data: {
+					'review_id': review_id,
+					'content': $('#rereview-content-'+review_id).val()
+				},
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+				},
+				success: function(res) {
+					if(res == 1){
+						alert("답글 달기 완료");
+						location.reload();
+					}
+				}
+			});
+		}
+		function rereview_edit(review_id){
+			$.ajax({
+				type: 'POST',
+				url: '/shop/rereview/edit/',
+				data: {
+					'review_id': review_id,
+					'content': $('#rereview-content-edit-'+review_id).val()
+				},
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+				},
+				success: function(res) {
+					if(res == 1){
+						alert("답글 수정 완료");
+						location.reload();
+					}
+				}
+			});
+		}
+		function rereview_delete(rereview_id){
+			console.log(rereview_id);
+			$.ajax({
+				type: 'POST',
+				url: '/shop/rereview/delete/',
+				data: {
+					'rereview_id': rereview_id
+				},
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+				},
+				success: function(res) {
+					if(res == 1){
+						alert("답글 삭제 완료");
+						location.reload();
+					}
+				}
+			});
+		}
+		function recommentqa(commentqa_id){
+			$.ajax({
+				type: 'POST',
+				url: '/shop/recommentqa/new/',
+				data: {
+					'commentqa_id': commentqa_id,
+					'content': $('#recommentqa-content-'+commentqa_id).val()
+				},
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+				},
+				success: function(res) {
+					if(res == 1){
+						alert("답글 달기 완료");
+						location.reload();
+					}
+				}
+			});
+		}
+		function recommentqa_edit(commentqa_id){
+			$.ajax({
+				type: 'POST',
+				url: '/shop/recommentqa/edit/',
+				data: {
+					'commentqa_id': commentqa_id,
+					'content': $('#recommentqa-content-edit-'+commentqa_id).val()
+				},
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+				},
+				success: function(res) {
+					if(res == 1){
+						alert("답글 수정 완료");
+						location.reload();
+					}
+				}
+			});
+		}
+		function recommentqa_delete(recommentqa_id){
+			$.ajax({
+				type: 'POST',
+				url: '/shop/recommentqa/delete/',
+				data: {
+					'recommentqa_id': recommentqa_id
+				},
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+				},
+				success: function(res) {
+					if(res == 1){
+						alert("답글 삭제 완료");
+						location.reload();
+					}
+				}
+			});
+		}
+
+	</script>
+
+{% endblock content %}

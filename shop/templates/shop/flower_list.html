@@ -1,0 +1,91 @@
+{% extends "shop/layout.html" %}
+{% load imagekit %}
+{% load humanize %}
+
+{% block content %}
+
+	<div class="container">
+
+	<div class="panel panel-default">
+		<div class="panel-heading" style="text-align:center;">
+			<h4>BEST FLOWER</h4>
+			<div style="height:1rem;"></div>
+			<div class="container-fluid">
+
+				<div class="row">
+					<div class="col-xs-12 col-sm-12 col-md-12">
+						<div class="carousel carousel-showmanymoveone slide" id="itemslider">
+							<div class="carousel-inner">
+
+								{% for flower in flower_list %}
+								{% if flower.is_best %}
+									{% if flower.id == 1 %}
+									<div class="item active">
+									{% else %}
+									<div class="item">
+									{% endif %}
+										<div class="col-xs-12 col-sm-6 col-md-2">
+											<img src="{{ flower.thumbnail.url }}" class="img-responsive center-block" style="width:170px;height:170px;" onclick="location.href='{{ flower.get_absolute_url }}'">
+											<h4 class="text-center">{{ flower.name }}</h4>
+											<h5 class="text-center">{{ flower.price|intcomma }} 원</h5>
+										</div>
+									</div>
+									{% endif %}
+									{% endfor %}
+									</div>
+
+								<div id="slider-control">
+									<a class="left carousel-control" href="#itemslider" data-slide="prev"><img src="https://s12.postimg.org/uj3ffq90d/arrow_left.png" alt="Left" class="img-responsive"></a>
+									<a class="right carousel-control" href="#itemslider" data-slide="next"><img src="https://s12.postimg.org/djuh0gxst/arrow_right.png" alt="Right" class="img-responsive"></a>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="panel-body" style="padding:0px;">
+			{% for flower in flower_list %}
+			<div class="block" onclick="location.href='{{ flower.get_absolute_url }}'">
+				<div class="middle">
+					<img src="{{ flower.thumbnail.url }}">
+				</div>
+				<div class="bottom">
+					<div class="heading">{{ flower.name }}</div>
+					<div class="info">{{ flower.price|intcomma }} 원</div>
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+		<div class="panel-footer">
+			From YAMI
+		</div>
+	</div>
+
+	</div>
+
+	<script type="text/javascript">
+		$(document).ready(function(){
+
+			$('#itemslider').carousel({ interval: 2400 });
+
+			$('.carousel-showmanymoveone .item').each(function(){
+				var itemToClone = $(this);
+
+				for (var i=1;i<{{ isbestcount }};i++) {
+					itemToClone = itemToClone.next();
+
+					if (!itemToClone.length) {
+						itemToClone = $(this).siblings(':first');
+					}
+
+					itemToClone.children(':first-child').clone()
+					.addClass("cloneditem-"+(i))
+					.appendTo($(this));
+				}
+			});
+		});
+	</script>
+
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends "accounts/layout.html" %}
+{% load humanize %}
+
+{% block content %}
+
+	<div class="container">
+		
+		<table class="table table-hover table-striped table-cart">
+			<thead>
+				<tr>
+					<th>주문코드</th>
+					<th>결제금액</th>
+					<th>주문일자</th>
+					<th>자세히</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for order in order_list %}
+				<tr>
+					<td style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;max-width:5rem;">{{ order.order_code }}</td>
+					<td>{{ order.total_price|intcomma }}원</td>
+					<td>{{ order.created_at|date:"Y-m-d"  }}</td>
+					<td><button data-toggle="modal" data-target="#myModal" class="btn btn-default btn-sm" onclick="flower_list('{{ order.order_code }}', '{{ order.receiver_name }}', '{{ order.receiver_phone_number }}', '{{ order.receiver_email }}', '{{ order.receiver_post_code }}', '{{ order.receiver_address }}', '{{ order.receiver_address_detail }}', '{{ order.pay_type }}', {{ order.total_price }}, '{{ order.created_at|date:"Y-m-d"  }}', {{ order.id }})"><span class="glyphicon glyphicon-search"></span></button></td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+
+	</div>
+
+	<!-- Modal -->
+	<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="myModalLabel">
+						주문 내역
+					</h4>
+				</div>
+				<div class="modal-body">
+
+					<table class="table table-hover table-bordered table-cart">
+						<tbody>
+							<tr style="background-color:#dddddd;">
+								<td style="border: 1px solid #fff;">주문코드</td>
+								<td style="border: 1px solid #fff;">주문일자</td>
+							</tr>
+							<tr>
+								<td style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" id="ordercode"></td>
+								<td style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" id="createdat"></td>
+							</tr>
+							<tr style="background-color:#dddddd;">
+								<td style="border: 1px solid #fff;">결제수단</td>
+								<td style="border: 1px solid #fff;">상품금액 합계</td>
+							</tr>
+							<tr>
+								<td id="paytype"></td>
+								<td id="totalprice"></td>
+							</tr>
+						</tbody>
+					</table>
+					<table class="table table-hover table-bordered table-cart">
+						<tbody>
+							<tr>
+								<td style="background-color:#dddddd;border: 1px solid #fff;">받으실분성함</td>
+								<td id="receivername"></td>
+							</tr>
+							<tr>
+								<td rowspan="3" style="background-color:#dddddd;border: 1px solid #fff;">주소</td>
+								<td id="receiverpostcode"></td>
+							</tr>
+							<tr>
+								<td id="receiveraddress"></td>
+							</tr>
+							<tr>
+								<td style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;" id="receiveraddressdetail"></td>
+							</tr>
+							<tr>
+								<td style="background-color:#dddddd;border: 1px solid #fff;">이메일</td>
+								<td id="receiveremail"></td>
+							</tr>
+							<tr>
+								<td style="background-color:#dddddd;border: 1px solid #fff;">휴대폰번호</td>
+								<td id="receiverphonenumber"></td>
+							</tr>
+						</tbody>
+					</table>
+
+					<table class="table table-hover table-striped table-cart">
+						<thead>
+							<tr>
+								<th>이미지</th>
+								<th>꽃이름</th>
+								<th>가격(원)</th>
+								<th>수량</th>
+							</tr>
+						</thead>
+						<tbody id="flower-list">
+							
+						</tbody>
+					</table>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal" aria-label="Close">닫기</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script type="text/javascript">
+		function flower_list(order_code, receiver_name, receiver_phone_number, receiver_email, receiver_post_code, receiver_address, receiver_address_detail, pay_type, total_price, created_at, order_id){
+
+			$('#ordercode').html(order_code);
+			$('#createdat').html(created_at);
+			$('#paytype').html(pay_type);
+			$('#totalprice').html(int_comma(total_price)+' 원');
+			$('#receivername').html(receiver_name);
+			$('#receiverpostcode').html(receiver_post_code);
+			$('#receiveraddress').html(receiver_address);
+			$('#receiveraddressdetail').html(receiver_address_detail);
+			$('#receiveremail').html(receiver_email);
+			$('#receiverphonenumber').html(receiver_phone_number);
+
+			$('#flower-list').html('');
+			$.ajax({
+				type: 'POST',
+				url: '/accounts/productlist/',
+				data: {
+					order_id: order_id
+				},
+				beforeSend: function(xhr) {
+					xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+				},
+				success: function(res){
+					for(var i = 0; i < res.length; i++){
+						$('#flower-list').append(
+							'<tr onclick="location.href=\'/shop/'+res[i].flower_id+'\'"><td><img src="'+res[i].flower_thumbnail+'" style="height:4rem;width:auto;"></td><td>'+res[i].flower_name+'</td><td>'+int_comma(res[i].flower_price)+'</td><td>'+res[i].count+'</td></tr>'
+						);
+					}
+				}
+			});
+		}
+	</script>
+
+{% endblock %}

@@ -1,0 +1,298 @@
+{% extends "shop/layout.html" %}
+{% load humanize %}
+
+{% block content %}
+
+	<div class="container">
+
+		<div class="panel panel-default">
+			<div class="panel-heading" style="text-align:center;">
+				주문 리스트
+			</div>
+			<div class="panel-body">
+				<table id="product" class="table table-hover table-bordered table-cart">
+					<thead>
+						<tr>
+							<th width="50"><input name="choice-all" id="choice-all" type="checkbox"></th>
+							<th width="50">이미지</th>
+							<th>꽃이름</th>
+							<th width="80">가격(원)</th>
+							<th>수량</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for flower in flower_list %}
+						<tr id="cartlist-{{ flower.id }}">
+							<td width="50">
+								<input name="flowerid[]" type="hidden" value="{{ flower.id }}">
+								<input name="choice-flower" id="choice-{{ flower.id }}" type="checkbox">
+							</td>
+							<td width="50" style="text-align:center;">
+								<img src="{{ flower.thumbnail.url }}" style="height:7rem;width:auto;">
+							</td>
+							<td onclick="location.href='{% url "shop:flower_detail" flower.id %}'">
+								{{ flower.name }}
+							</td>
+							<td width="80">
+								<input id="price-{{ flower.id }}" type="text" name="price[]" value="{{ flower.price }}" readonly style="width:6rem;">
+							</td>
+							<td>
+								<input id="count-{{ flower.id }}" class="form-control-sm" type="number" style="width:4rem;" value="1" min="0" name="flowercount[]"> 개
+							</td>
+						</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+				<div style="text-align:center;">
+					상품구매금액 <strong id="flower_price"></strong> + 배송비 <strong>3,000원</strong><br><strong id="total_price" class="text-primary" style="font-size:2rem;"></strong>
+				</div>
+			</div>
+			<div class="panel-footer">
+				<a class="btn btn-default" onclick="flower_choice_delete();">선택상품제거</a>
+			</div>
+		</div>
+
+		<div class="panel panel-default">
+			<div class="panel-heading" style="text-align:center;">
+				배송 정보
+			</div>
+			<div class="panel-body">
+				<table class="table table-hover table-bordered">
+					<tbody>
+						<tr>
+							<td>주문하시는 분<strong class="text-danger">*</strong></td>
+							<td><input id="rec-name" class="form-control-sm" type="text" value="{{ user.profile.name }}"></td>
+						</tr>
+						<tr>
+							<td rowspan="3" style="vertical-align:middle;">배송지 주소<strong class="text-danger">*</strong></td>
+							<td><input id="rec-postcode" class="form-control-sm postcodify_postcode" type="text" value="{{ user.profile.post_code }}" style="width:7rem;margin-right:1rem;" readonly><input id="search_button" type="button" value="찾기" class="btn btn-default btn-sm"></td>
+						</tr>
+						<tr>
+							<td><input id="rec-address" class="form-control-sm postcodify_address" type="text" value="{{ user.profile.address }}" readonly></td>
+						</tr>
+						<tr>
+							<td><input id="rec-addressdetail" class="form-control-sm postcodify_details" type="text" value="{{ user.profile.address_detail }}"></td>
+						</tr>
+						<tr>
+							<td>휴대전화<strong class="text-danger">*</strong></td></td>
+							<td><input id="rec-phonenumber" class="form-control-sm" type="number" value="{{ user.profile.phone_number }}"></td>
+						</tr>
+						<tr>
+							<td>이메일<strong class="text-danger">*</strong></td></td>
+							<td><input id="rec-email" class="form-control-sm" type="email"></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<div class="panel panel-default">
+			<div class="panel-heading" style="text-align:center;">
+				결제 정보
+			</div>
+			<div class="panel-body">
+				<table class="table table-hover table-bordered">
+					<tbody>
+						<tr>
+							<td width="150" style="vertical-align:middle;">총 주문 금액</td>
+							<td><strong style="font-size:2rem;" class="text-danger" id="total_pay"></strong> 원</td>
+						</tr>
+						<tr>
+							<td>결제 수단</td>
+							<td>
+								<select name="paytype" class="form-control-sm">
+									<option selected value="0">선택</option>
+									<option value="무통장 입급">무통장 입금</option>
+									<option value="카드 결제">카드 결제</option>
+									<option value="실시간 계좌이체">실시간 계좌이체</option>
+								</select>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="panel-footer">
+				<a class="btn btn-default btn-lg" onclick="payment();">결제하기</a>
+			</div>
+		</div>
+
+	</div>
+
+	<script type="text/javascript">
+
+		var product_price = 3000;
+		$(function(){
+
+			{% for flower in flower_list %}
+				product_price += {{ flower.price }};
+			{% endfor %}
+
+			$('#flower_price').html(int_comma(product_price)+'원');
+			var total_price = product_price;
+			$('#total_price').html('합계 '+int_comma(total_price)+' 원');
+			$('#total_pay').html(int_comma(total_price));
+
+			$('#choice-all').change(function(){
+				if($('#choice-all').is(":checked")){
+					$('input:checkbox[name="choice-flower"]').each(function(){
+						this.checked = true;
+					});
+				}else{
+					$('input:checkbox[name="choice-flower"]').each(function(){
+						this.checked = false;
+					});
+				}
+			});
+
+			{% for flower in flower_list %}
+				$('#choice-{{ flower.id }}').change(function(){
+					if ($('#choice-{{ flower.id }}').is(":checked") == false){
+						$('#choice-all').attr("checked", false);
+					}
+				});
+			{% endfor %}
+
+		});
+
+		$("#search_button").postcodifyPopUp();
+
+		function flower_choice_delete(){
+
+			if($('input:checkbox[name="choice-flower"]:checked').length >= $('#product').children('tbody').children('tr').length){
+				alert('모든 상품을 제거할 수 없습니다.');
+			}else{
+				{% for flower in flower_list %}
+				if($('#choice-{{ flower.id }}').is(":checked")){
+					$('#cartlist-{{ flower.id }}').remove();
+				}
+				{% endfor %}
+				settotalprice();
+			}
+
+		}
+
+		function payment(){
+			if(checkValidation()){
+				if(confirm("총 결제금액 \'"+int_comma(product_price)+"원\' 주문하시겠습니까?")){
+
+					var flowerids = [];
+					var flowercounts = [];
+
+					$('input[name="flowerid[]"]').each(function(){
+						flowerids.push($(this).val());
+					});
+					$('input[name="flowercount[]"]').each(function(){
+						flowercounts.push($(this).val());
+					});
+
+					var response = {
+						receiver_name: $('#rec-name').val(),
+						receiver_phone_number: $('#rec-phonenumber').val(),
+						receiver_email: $('#rec-email').val(),
+						receiver_post_code: $('#rec-postcode').val(),
+						receiver_address: $('#rec-address').val(),
+						receiver_address_detail: $('#rec-addressdetail').val(),
+						pay_type: $('select[name=paytype]').val(),
+						total_price: product_price,
+						flower_id: flowerids,
+						flower_count: flowercounts
+					};
+
+					$.ajax({
+						type: 'POST',
+						url: '/shop/order_new/',
+						data: response,
+						beforeSend: function(xhr) {
+							xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
+						},
+						success: function(res){
+							if(res == 1){
+								location.href='/accounts/orderlist/';
+								// 주문 리스트로 이동
+							}
+						}
+					});
+				}else{
+					return;
+				}
+			}else{
+				return;
+			}
+		}
+
+		function checkValidation(){
+			var regphone = /^010[1-9]\d{7}$/;
+			var regemail = /[0-9a-zA-Z][_0-9a-zA-Z-]*@[_0-9a-zA-Z-]+(\.[_0-9a-zA-Z-]+){1,2}$/;
+			if(product_price == 0 || product_price == 3000){
+				alert('선택된 상품이 없습니다.');
+				return false;
+			}else{
+				if($('#rec-name').val().replace(/\s/g,"").length == 0 || 
+					$('#rec-postcode').val().replace(/\s/g,"").length == 0 || 
+					$('#rec-address').val().replace(/\s/g,"").length == 0 || 
+					$('#rec-addressdetail').val().replace(/\s/g,"").length == 0 || 
+					$('#rec-phonenumber').val().replace(/\s/g,"").length == 0 || 
+					$('#rec-email').val().replace(/\s/g,"").length == 0){
+					alert('배송지 정보를 확인해주세요.');
+					return false;
+				}else{
+					if(!($('#rec-phonenumber').val().match(regphone))){
+						alert('정확한 핸드폰 번호를 입력해주세요.');
+						$('#rec-phonenumber').focus();
+						return false;
+					}else{
+						// email check
+						if(!($('#rec-email').val().match(regemail))){
+							alert('정확한 이메일을 입력해주세요.');
+							$('#rec-email').focus();
+							return false;
+						}else{
+							// 결제수단 체크
+							if($('select[name=paytype]').val() == 0){
+								alert('결제 수단을 선택해주세요.');
+								$('select[name=paytype]').focus();
+								return false;
+							}else{
+								return true;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		function settotalprice(){
+			var total_price = 0;
+			var values = [];
+
+			$('[name="price[]"]').each(function(){
+				values.push(parseInt($(this).val()));
+			});
+
+			for(var i = 0; i < values.length; i++){
+				total_price += values[i];
+			}
+
+			$('#flower_price').html(int_comma(total_price)+'원');
+			$('#total_price').html('합계 '+int_comma(total_price+3000)+' 원');
+			$('#total_pay').html(int_comma(total_price+3000));
+
+			product_price = total_price+3000;
+		}
+
+		{% for flower in flower_list %}
+			$('#count-{{ flower.id }}').change(function(){
+				if(!($('#count-{{ flower.id }}').val().match(/^\d+$/))){
+					alert("\'-\' 불가");
+					$('#count-{{ flower.id }}').val(0);
+					$('#price-{{ flower.id }}').val(0);
+				}else{
+					$('#price-{{ flower.id }}').val({{ flower.price }}*$('#count-{{ flower.id }}').val());
+				}
+				settotalprice();
+			});
+		{% endfor %}
+
+	</script>
+
+{% endblock content %}
