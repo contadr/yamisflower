@@ -355,7 +355,6 @@
 		});
 
 		function flower_like(){
-			$('#success-alert').removeClass('display-none');
 			$.ajax({
 				type: 'POST',
 				url: 'like/',
@@ -364,6 +363,7 @@
 				},
 				success: function(res) {
 					if(res == 0){
+						$('#success-alert').removeClass('display-none');
 						$('#likebtn').html('<span class="glyphicon glyphicon-heart-empty" aria-hidden="true"></span>');
 
 						$('#success-alert').html('좋아요 취소');
@@ -371,7 +371,8 @@
 						.slideUp(500, function(){
 					    	$("#success-alert").slideUp(500);
 						});
-					}else{
+					}else if(res == 1){
+						$('#success-alert').removeClass('display-none');
 						$('#likebtn').html('<span class="glyphicon glyphicon-heart" aria-hidden="true"></span>');
 						
 						$('#success-alert').html('좋아요 성공');
@@ -379,13 +380,15 @@
 						.slideUp(500, function(){
 					    	$("#success-alert").slideUp(500);
 						});
+					}else{
+						alert('로그인 후 이용해주세요.');
+						location.href = '/accounts/login/';
 					}
 				}
 			});
 		}
 
 		function flower_cart(){
-			$('#success-alert').removeClass('display-none');
 			$.ajax({
 				type: 'POST',
 				url: 'cart_add/',
@@ -393,12 +396,17 @@
 					xhr.setRequestHeader("X-CSRFToken", "{{ csrf_token }}");
 				},
 				success: function(res) {
+					console.log(res);
 					if(res == 1){
+						$('#success-alert').removeClass('display-none');
 						$('#success-alert').html('상품이 \'CART\' 에 추가되었습니다.');
 						$("#success-alert").fadeTo(2000, 500)
 						.slideUp(500, function(){
 					    	$("#success-alert").slideUp(500);
 						});
+					}else{
+						alert('로그인 후 이용해주세요.');
+						location.href = '/accounts/login/';
 					}
 				}
 			});

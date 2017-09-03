@@ -74,15 +74,17 @@ def flower_order(request, numbers):
 	})
 
 
-@login_required
 def flower_cart_add(request, id):
 	if request.method == 'POST':
 
-		Cart.objects.create(
-			user_id = request.user.id,
-			flower_id = id,
-		)
-		return HttpResponse(1)
+		if request.user.is_authenticated():
+			Cart.objects.create(
+				user_id = request.user.id,
+				flower_id = id,
+			)
+			return HttpResponse(1)
+		else:
+			return HttpResponse(0)
 
 
 @login_required
@@ -93,20 +95,23 @@ def flower_cart_delete(request, numbers):
 		cart.delete()
 		return HttpResponse(1)
 
-@login_required
+
 def flower_like(request, id):
 	if request.method == 'POST':
 
-		if Like.objects.filter(user_id=request.user.id, flower_id=id):
-			like = Like.objects.filter(user_id=request.user.id, flower_id=id)
-			like.delete()
-			return HttpResponse(0)
+		if request.user.is_authenticated():
+			if Like.objects.filter(user_id=request.user.id, flower_id=id):
+				like = Like.objects.filter(user_id=request.user.id, flower_id=id)
+				like.delete()
+				return HttpResponse(0)
+			else:
+				Like.objects.create(
+					user_id = request.user.id, # 위에 super().save()로 받아온 user 인스턴스
+					flower_id = id,
+				)
+				return HttpResponse(1)
 		else:
-			Like.objects.create(
-				user_id = request.user.id, # 위에 super().save()로 받아온 user 인스턴스
-				flower_id = id,
-			)
-			return HttpResponse(1)
+			return HttpResponse(2)
 
 
 @login_required
